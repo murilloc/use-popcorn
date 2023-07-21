@@ -51,14 +51,16 @@ const average = (arr) =>
     arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 export default function App() {
+    const [movies, setMovies] = useState(tempMovieData);
     return (
         <>
-            <NavBar/>
-            <Main/>
+            <NavBar movies={movies}/>
+            <Main movies={movies}/>
         </>
     );
 }
 
+// Stateful Component
 const SearchBar = () => {
     const [query, setQuery] = useState("");
     return (
@@ -72,6 +74,7 @@ const SearchBar = () => {
     )
 }
 
+// Presentational Component
 const Logo = () => {
     return (
         <div className="logo">
@@ -81,25 +84,31 @@ const Logo = () => {
     )
 }
 
-const NumResults = () => {
+
+// Presentational Component
+const NumResults = ({movies}) => {
     return (
         <p className="num-results">
-            Found <strong>X</strong> results
+            Found <strong>{movies.length}</strong> results
         </p>
     )
 }
 
-const NavBar = () => {
+
+//Structural Component
+const NavBar = ({movies}) => {
     return (
         <nav className="nav-bar">
             <Logo/>
             <SearchBar/>
-            <NumResults/>
+            <NumResults movies={movies}/>
         </nav>
     )
 }
 
-const ListBox = () => {
+
+// Stateful Component
+const ListBox = ({movies}) => {
     const [isOpen1, setIsOpen1] = useState(true);
 
     return (
@@ -111,14 +120,14 @@ const ListBox = () => {
                 {isOpen1 ? "–" : "+"}
             </button>
             {isOpen1 && (
-                <MovieList/>
+                <MovieList movies={movies}/>
             )}
         </div>
     )
 }
 
-const MovieList = () => {
-    const [movies, setMovies] = useState(tempMovieData);
+// Presentational Component
+const MovieList = ({movies}) => {
 
     return (
         <ul className="list">
@@ -129,6 +138,7 @@ const MovieList = () => {
     )
 }
 
+// Presentational Component
 const Movie = ({movie}) => {
     return (
         <li>
@@ -144,6 +154,7 @@ const Movie = ({movie}) => {
     )
 }
 
+// Statefull Component
 const WatchedBox = () => {
 
     const [watched, setWatched] = useState(tempWatchedData);
@@ -167,6 +178,7 @@ const WatchedBox = () => {
     )
 }
 
+// Presentational Component
 const WatchedMoviesList = ({watched}) => {
 
     return (
@@ -178,6 +190,7 @@ const WatchedMoviesList = ({watched}) => {
     )
 }
 
+// Presentational Component
 const WatchedMovie = ({movie}) => {
     return (
         <li>
@@ -202,6 +215,7 @@ const WatchedMovie = ({movie}) => {
 
 }
 
+//
 const WatchedSummary = ({watched}) => {
 
     const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
@@ -233,13 +247,15 @@ const WatchedSummary = ({watched}) => {
     )
 }
 
-const Main = () => {
-    return (
-        <main className="main">
-            <ListBox/>
-            <WatchedBox/>
-        </main>
-    )
-}
+//Structural Component
+const
+    Main = ({movies}) => {
+        return (
+            <main className="main">
+                <ListBox movies={movies}/>
+                <WatchedBox/>
+            </main>
+        )
+    }
 
 
