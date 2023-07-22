@@ -55,11 +55,15 @@ export default function App() {
     return (
         <>
             <NavBar>
-                <Logo/>
                 <SearchBar/>
                 <NumResults movies={movies}/>
             </NavBar>
-            <Main movies={movies}/>
+            <Main >
+                <ListBox movies={movies}>
+                    <MovieList movies={movies}/>
+                </ListBox>
+                <WatchedBox/>
+            </Main>
         </>
     );
 }
@@ -103,6 +107,7 @@ const NumResults = ({movies}) => {
 const NavBar = ({children}) => {
     return (
         <nav className="nav-bar">
+            <Logo/>
             {children}
         </nav>
     )
@@ -110,7 +115,7 @@ const NavBar = ({children}) => {
 
 
 // Stateful Component
-const ListBox = ({movies}) => {
+const ListBox = ({children}) => {
     const [isOpen1, setIsOpen1] = useState(true);
 
     return (
@@ -121,9 +126,7 @@ const ListBox = ({movies}) => {
             >
                 {isOpen1 ? "–" : "+"}
             </button>
-            {isOpen1 && (
-                <MovieList movies={movies}/>
-            )}
+            {isOpen1 && children}
         </div>
     )
 }
@@ -251,11 +254,10 @@ const WatchedSummary = ({watched}) => {
 
 //Structural Component
 const
-    Main = ({movies}) => {
+    Main = ({children}) => {
         return (
             <main className="main">
-                <ListBox movies={movies}/>
-                <WatchedBox/>
+                {children}
             </main>
         )
     }
