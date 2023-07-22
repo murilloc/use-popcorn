@@ -1,5 +1,7 @@
 // avoid regeneration of the style object on every render
 import {useState} from "react";
+import PropTypes from "prop-types";
+
 
 const containerStyle = {
     display: 'flex',
@@ -9,6 +11,16 @@ const containerStyle = {
 
 const starContainerStyle = {
     display: 'flex',
+}
+
+StarRating.prototype = {
+    maxRating: PropTypes.number,
+    defaultRating: PropTypes.number,
+    color: PropTypes.string,
+    size: PropTypes.number,
+    messages: PropTypes.array,
+    className: PropTypes.string,
+    onSetRating: PropTypes.func,
 }
 
 function StarRating({
