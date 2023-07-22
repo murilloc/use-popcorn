@@ -52,17 +52,22 @@ const average = (arr) =>
 
 export default function App() {
     const [movies, setMovies] = useState(tempMovieData);
+    const [watched, setWatched] = useState(tempWatchedData);
+
     return (
         <>
             <NavBar>
                 <SearchBar/>
                 <NumResults movies={movies}/>
             </NavBar>
-            <Main >
-                <ListBox movies={movies}>
+            <Main>
+                <Box movies={movies}>
                     <MovieList movies={movies}/>
-                </ListBox>
-                <WatchedBox/>
+                </Box>
+                <Box>
+                    <WatchedSummary watched={watched}/>
+                    <WatchedMoviesList watched={watched}/>
+                </Box>
             </Main>
         </>
     );
@@ -115,21 +120,44 @@ const NavBar = ({children}) => {
 
 
 // Stateful Component
-const ListBox = ({children}) => {
-    const [isOpen1, setIsOpen1] = useState(true);
+const Box = ({children}) => {
+    const [isOpen, setIsOpen] = useState(true);
 
     return (
         <div className="box">
             <button
                 className="btn-toggle"
-                onClick={() => setIsOpen1((open) => !open)}
+                onClick={() => setIsOpen((open) => !open)}
             >
-                {isOpen1 ? "–" : "+"}
+                {isOpen ? "–" : "+"}
             </button>
-            {isOpen1 && children}
+            {isOpen && children}
         </div>
     )
 }
+
+// const WatchedBox = () => {
+//
+//     const [watched, setWatched] = useState(tempWatchedData);
+//     const [isOpen2, setIsOpen2] = useState(true);
+//
+//     return (
+//         <div className="box">
+//             <button
+//                 className="btn-toggle"
+//                 onClick={() => setIsOpen2((open) => !open)}
+//             >
+//                 {isOpen2 ? "–" : "+"}
+//             </button>
+//             {isOpen2 && (
+//                 <>
+//                     <WatchedSummary watched={watched}/>
+//                     <WatchedMoviesList watched={watched}/>
+//                 </>
+//             )}
+//         </div>
+//     )
+// }
 
 // Presentational Component
 const MovieList = ({movies}) => {
@@ -159,29 +187,6 @@ const Movie = ({movie}) => {
     )
 }
 
-// Statefull Component
-const WatchedBox = () => {
-
-    const [watched, setWatched] = useState(tempWatchedData);
-    const [isOpen2, setIsOpen2] = useState(true);
-
-    return (
-        <div className="box">
-            <button
-                className="btn-toggle"
-                onClick={() => setIsOpen2((open) => !open)}
-            >
-                {isOpen2 ? "–" : "+"}
-            </button>
-            {isOpen2 && (
-                <>
-                    <WatchedSummary watched={watched}/>
-                    <WatchedMoviesList watched={watched}/>
-                </>
-            )}
-        </div>
-    )
-}
 
 // Presentational Component
 const WatchedMoviesList = ({watched}) => {
