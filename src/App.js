@@ -54,7 +54,11 @@ export default function App() {
     const [movies, setMovies] = useState(tempMovieData);
     return (
         <>
-            <NavBar movies={movies}/>
+            <NavBar>
+                <Logo/>
+                <SearchBar/>
+                <NumResults movies={movies}/>
+            </NavBar>
             <Main movies={movies}/>
         </>
     );
@@ -96,12 +100,10 @@ const NumResults = ({movies}) => {
 
 
 //Structural Component
-const NavBar = ({movies}) => {
+const NavBar = ({children}) => {
     return (
         <nav className="nav-bar">
-            <Logo/>
-            <SearchBar/>
-            <NumResults movies={movies}/>
+            {children}
         </nav>
     )
 }
