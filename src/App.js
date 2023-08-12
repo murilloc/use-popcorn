@@ -1,81 +1,107 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import userEvent from "@testing-library/user-event";
+import StarRating from "./StarRating";
 
-const tempMovieData = [
-    {
-        imdbID: "tt1375666",
-        Title: "Inception",
-        Year: "2010",
-        Poster:
-            "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-    },
-    {
-        imdbID: "tt0133093",
-        Title: "The Matrix",
-        Year: "1999",
-        Poster:
-            "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg",
-    },
-    {
-        imdbID: "tt6751668",
-        Title: "Parasite",
-        Year: "2019",
-        Poster:
-            "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg",
-    },
-];
+const average = (arr) => arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-const tempWatchedData = [
-    {
-        imdbID: "tt1375666",
-        Title: "Inception",
-        Year: "2010",
-        Poster:
-            "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-        runtime: 148,
-        imdbRating: 8.8,
-        userRating: 10,
-    },
-    {
-        imdbID: "tt0088763",
-        Title: "Back to the Future",
-        Year: "1985",
-        Poster:
-            "https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SX300.jpg",
-        runtime: 116,
-        imdbRating: 8.5,
-        userRating: 9,
-    },
-];
+const KEY = 'd4cb29eb';
 
-const average = (arr) =>
-    arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
-
+// Render Logic should not include side effect
 export default function App() {
-    const [movies, setMovies] = useState(tempMovieData);
-    const [watched, setWatched] = useState(tempWatchedData);
+    const [query, setQuery] = useState("Terminator");
+    const [movies, setMovies] = useState([]);
+    const [watched, setWatched] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [selectedId, setSelectedId] = useState(null);
+
+    function handleSelectMovie(id) {
+        setSelectedId((selectedId) => (id === selectedId ? null : id));
+    }
+
+    function handleCloseMovie() {
+        setSelectedId(null);
+    }
+
+    useEffect(function () {
+        async function fetchMovies() {
+            try {
+                setIsLoading(true);
+                setError("");
+                const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`);
+                if (!res.ok) {
+                    throw new Error("Error when fetching movies");
+                }
+                const data = await res.json();
+                if (data.Response === 'False') {
+                    throw new Error(data.Error);
+                }
+                setMovies(data.Search);
+                console.log(data.Search)
+                setIsLoading(false);
+            } catch (e) {
+                setError(e.message);
+            } finally {
+                setIsLoading(false);
+            }
+
+        }
+
+        if (query.length < 3) {
+            setMovies([]);
+            setError("");
+            return;
+        }
+        fetchMovies();
+    }, [query]);
+
 
     return (
         <>
             <NavBar>
-                <SearchBar/>
+                <SearchBar query={query} setQuery={setQuery}/>
                 <NumResults movies={movies}/>
             </NavBar>
             <Main>
                 <Box movies={movies}>
-                    <MovieList movies={movies}/>
+                    {/*{isLoading ? <Loader/> :<MovieList movies={movies}/>}*/}
+                    {isLoading && <Loader/>}
+                    {!isLoading && !error && <MovieList movies={movies} onSelectMovie={handleSelectMovie}/>}
+                    {error && <ErrorMessage message={error}/>}
                 </Box>
                 <Box>
-                    <WatchedSummary watched={watched}/>
-                    <WatchedMoviesList watched={watched}/>
+                    {selectedId ? <MovieDetails selectedId={selectedId} onCloseMovie={handleCloseMovie}/> :
+                        <>
+                            <WatchedSummary watched={watched}/>
+                            <WatchedMoviesList watched={watched}/>
+                        </>
+                    }
                 </Box>
             </Main>
         </>
     );
 }
 
+
+const Loader = () => {
+    return (
+        <div className="loader">
+            <span role="img" aria-label="popcorn">Loading....</span>
+        </div>
+    )
+}
+
+const ErrorMessage = ({message}) => {
+    return (
+        <div className="error">
+            <span role="img" aria-label="popcorn">🍿</span>
+            <p>{message}</p>
+        </div>
+    )
+}
+
 // Stateful Component
-const SearchBar = () => {
-    const [query, setQuery] = useState("");
+function SearchBar({query, setQuery}) {
     return (
         <input
             className="search"
@@ -160,21 +186,21 @@ const Box = ({children}) => {
 // }
 
 // Presentational Component
-const MovieList = ({movies}) => {
+const MovieList = ({movies, onSelectMovie}) => {
 
     return (
-        <ul className="list">
+        <ul className="list list-movies">
             {movies?.map((movie) => (
-                <Movie movie={movie} key={movie.imdbID}/>
+                <Movie movie={movie} key={movie.imdbID} onSelectMovie={onSelectMovie}/>
             ))}
         </ul>
     )
 }
 
 // Presentational Component
-const Movie = ({movie}) => {
+const Movie = ({movie, onSelectMovie}) => {
     return (
-        <li>
+        <li onClick={() => onSelectMovie(movie.imdbID)}>
             <img src={movie.Poster} alt={`${movie.Title} poster`}/>
             <h3>{movie.Title}</h3>
             <div>
@@ -225,6 +251,67 @@ const WatchedMovie = ({movie}) => {
 
 }
 
+function MovieDetails({selectedId, onCloseMovie}) {
+    const [movie, setMovie] = useState({});
+    const [userRating, setUserRating] = useState("");
+
+    const {
+        Title: title,
+        Year: year,
+        Poster: poster,
+        Runtime: runtime,
+        imdbRating,
+        Plot: plot,
+        Released: released,
+        Actors: actors,
+        Director: director,
+        Genre: genre
+    } = movie;
+
+    console.log(title, year, poster, runtime, imdbRating, plot, released, actors, director, genre);
+
+
+    useEffect(function () {
+        async function getMoviesDetails() {
+            try {
+                const response = await fetch(`https://www.omdbapi.com/?apikey=${KEY}&i=${selectedId}`);
+                const data = await response.json();
+                console.log(data);
+                setMovie(data);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        getMoviesDetails()
+    }, [selectedId])
+
+    return (
+        <div className='details'>
+            <header>
+                <button className="btn-back" onClick={onCloseMovie}>&larr;</button>
+                <img src={poster} alt={`Poster of ${movie} movie`}/>
+                <div className={'details-overview'}>
+                    <h2>{title}</h2>
+                    <p>{released} &bull; {runtime}</p>
+                    <p>{genre}</p>
+                    <p><span>⭐</span>{imdbRating} IMDB Rating</p>
+                </div>
+            </header>
+            <section>
+                <div className="rating">
+                <StarRating maxRating={10} size={24} onSetRating={setUserRating}
+                />
+                </div>
+                <p><em>{plot}</em></p>
+                <p>Starring {actors}</p>
+                <p>Directed By {director}</p>
+            </section>
+        </div>
+    );
+}
+
+
 //
 const WatchedSummary = ({watched}) => {
 
@@ -258,13 +345,12 @@ const WatchedSummary = ({watched}) => {
 }
 
 //Structural Component
-const
-    Main = ({children}) => {
-        return (
-            <main className="main">
-                {children}
-            </main>
-        )
-    }
+const Main = ({children}) => {
+    return (
+        <main className="main">
+            {children}
+        </main>
+    )
+}
 
 
