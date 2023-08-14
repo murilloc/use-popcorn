@@ -35,11 +35,14 @@ export default function App() {
 
     useEffect(function () {
 
+        // Browser API
+        const controller = new AbortController();
+
         async function fetchMovies() {
             try {
                 setIsLoading(true);
                 setError("");
-                const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`);
+                const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`, {signal: controller.signal});
                 if (!res.ok) {
                     throw new Error("Error when fetching movies");
                 }
@@ -47,10 +50,11 @@ export default function App() {
                 if (data.Response === 'False') {
                     throw new Error(data.Error);
                 }
+                setError("");
                 setMovies(data.Search);
                 setIsLoading(false);
             } catch (e) {
-                setError(e.message);
+                if (e.name !== "AbortError") setError(e.message);
             } finally {
                 setIsLoading(false);
             }
@@ -63,6 +67,11 @@ export default function App() {
             return;
         }
         fetchMovies();
+
+        return function(){
+            controller.abort();
+        }
+
     }, [query]);
 
 
@@ -323,9 +332,20 @@ function MovieDetails({selectedId, onCloseMovie, onAddWatched, watched}) {
                 console.error(e);
             }
         }
-
         getMoviesDetails()
-    }, [selectedId])
+    }, [selectedId]);
+
+
+    useEffect(function(){
+        if(!title) return;
+        document.title =`Movie | ${title}`;
+
+        return function(){
+            document.title = 'usePopcorn';
+            console.log(`Cleaned up movie ${title}`);
+        }
+    },[title]);
+
 
     return (
         <div className='details'>
