@@ -8,7 +8,7 @@ const KEY = 'd4cb29eb';
 
 // Render Logic should not include side effect
 export default function App() {
-    const [query, setQuery] = useState("Terminator");
+    const [query, setQuery] = useState("");
     const [movies, setMovies] = useState([]);
     const [watched, setWatched] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +24,6 @@ export default function App() {
     }
 
     function handleAddWatched(movie) {
-        console.log(movie);
         setWatched((watched) => [...watched, movie]);
     }
 
@@ -66,9 +65,10 @@ export default function App() {
             setError("");
             return;
         }
-        fetchMovies();
+        handleCloseMovie();
+        fetchMovies().then(r => console.log(r));
 
-        return function(){
+        return function () {
             controller.abort();
         }
 
@@ -239,7 +239,7 @@ const Movie = ({movie, onSelectMovie}) => {
 
 
 // Presentational Component
-const WatchedMoviesList = ({watched,onDeletedWatched}) => {
+const WatchedMoviesList = ({watched, onDeletedWatched}) => {
     return (
         <ul className="list">
             {watched.map((movie) => (
@@ -320,31 +320,46 @@ function MovieDetails({selectedId, onCloseMovie, onAddWatched, watched}) {
 
 
     useEffect(function () {
+        function callback(e) {
+            if (e.code === 'Escape') {
+                onCloseMovie();
+            }
+        }
+
+        document.addEventListener('keydown', callback);
+
+        return function () {
+            document.removeEventListener('keydown', callback);
+        }
+
+
+    }, [onCloseMovie]);
+
+
+    useEffect(function () {
         async function getMoviesDetails() {
             try {
                 setIsLoading(true);
                 const response = await fetch(`https://www.omdbapi.com/?apikey=${KEY}&i=${selectedId}`);
                 const data = await response.json();
-
                 setMovie(data);
                 setIsLoading(false);
             } catch (e) {
                 console.error(e);
             }
         }
-        getMoviesDetails()
+        getMoviesDetails();
     }, [selectedId]);
 
 
-    useEffect(function(){
-        if(!title) return;
-        document.title =`Movie | ${title}`;
+    useEffect(function () {
+        if (!title) return;
+        document.title = `Movie | ${title}`;
 
-        return function(){
+        return function () {
             document.title = 'usePopcorn';
-            console.log(`Cleaned up movie ${title}`);
         }
-    },[title]);
+    }, [title]);
 
 
     return (
