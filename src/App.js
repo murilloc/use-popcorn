@@ -327,6 +327,13 @@ function MovieDetails({selectedId, onCloseMovie, onAddWatched, watched}) {
     const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
     const watchedUserRating = watched.find((movie) => movie.imdbID === selectedId)?.userRating;
 
+    const countRef = useRef(0);
+
+    useEffect(() => {
+        if (userRating) countRef.current++;
+        console.log(countRef.current);
+    }, [userRating]);
+
 
     const {
         Title: title,
@@ -355,6 +362,7 @@ function MovieDetails({selectedId, onCloseMovie, onAddWatched, watched}) {
             actors: actors,
             director: director,
             genre: genre,
+            countRatingDecisions: countRef.current,
 
         }
         onAddWatched(newWatchedMovie);
