@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import userEvent from "@testing-library/user-event";
 import StarRating from "./StarRating";
 
@@ -14,7 +14,7 @@ export default function App() {
     const [error, setError] = useState("");
     const [selectedId, setSelectedId] = useState(null);
     // const [watched, setWatched] = useState([]);
-    const [watched, setWatched] = useState(function(){
+    const [watched, setWatched] = useState(function () {
         const watchedData = localStorage.getItem('watched');
         if (watchedData) {
             return JSON.parse(watchedData);
@@ -145,6 +145,29 @@ const ErrorMessage = ({message}) => {
 
 // Stateful Component
 function SearchBar({query, setQuery}) {
+    // useEffect(() => {
+    //     const element = document.querySelector('.search');
+    //     console.log(element);
+    //     element.focus();
+    // }, []);
+
+    const inputElement = useRef(null);
+
+    useEffect(function () {
+        function callback(e) {
+
+            if (document.activeElement === inputElement.current) return;
+
+            if (e.code === 'Enter') {
+                setQuery('');
+                inputElement.current.focus();
+            }
+        }
+
+        return () => document.addEventListener('keydown', callback);
+    }, [setQuery]);
+
+
     return (
         <input
             className="search"
@@ -152,6 +175,7 @@ function SearchBar({query, setQuery}) {
             placeholder="Search movies..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            ref={inputElement}
         />
     )
 }
