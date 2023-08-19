@@ -1,26 +1,19 @@
 import {useEffect, useRef, useState} from "react";
-import userEvent from "@testing-library/user-event";
 import StarRating from "./StarRating";
+import {useMovies} from "./useMovies";
+import {useLocalStorageState} from "./useLocalStorageState";
+import {useKey} from "./useKey";
 
 const average = (arr) => arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
-
 const KEY = 'd4cb29eb';
 
 // Render Logic should not include side effect
 export default function App() {
     const [query, setQuery] = useState("");
-    const [movies, setMovies] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
     const [selectedId, setSelectedId] = useState(null);
-    // const [watched, setWatched] = useState([]);
-    const [watched, setWatched] = useState(function () {
-        const watchedData = localStorage.getItem('watched');
-        if (watchedData) {
-            return JSON.parse(watchedData);
-        }
-        return watchedData;
-    });
+    const {movies, isLoading, error} = useMovies(query);
+    const [watched, setWatched] = useLocalStorageState([], 'watched');
+
 
     function handleSelectMovie(id) {
         setSelectedId((selectedId) => (id === selectedId ? null : id));
@@ -32,66 +25,11 @@ export default function App() {
 
     function handleAddWatched(movie) {
         setWatched((watched) => [...watched, movie]);
-        //localStorage.setItem('watched', JSON.stringify([...watched, movie]));
     }
-
-    useEffect(() => {
-        localStorage.setItem('watched', JSON.stringify(watched));
-    }, [watched]);
-
-    // useEffect(() => {
-    //     const watchedData = localStorage.getItem('watched');
-    //     if (watchedData) {
-    //         setWatched(JSON.parse(watchedData));
-    //     }
-    // }, [watched]);
 
     function handleDeleteWatchedMovie(selectedMovieId) {
         setWatched((watched) => watched.filter((movie) => movie.imdbID !== selectedMovieId));
     }
-
-
-    useEffect(function () {
-
-        // Browser API
-        const controller = new AbortController();
-
-        async function fetchMovies() {
-            try {
-                setIsLoading(true);
-                setError("");
-                const res = await fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=${query}`, {signal: controller.signal});
-                if (!res.ok) {
-                    throw new Error("Error when fetching movies");
-                }
-                const data = await res.json();
-                if (data.Response === 'False') {
-                    throw new Error(data.Error);
-                }
-                setError("");
-                setMovies(data.Search);
-                setIsLoading(false);
-            } catch (e) {
-                if (e.name !== "AbortError") setError(e.message);
-            } finally {
-                setIsLoading(false);
-            }
-
-        }
-
-        if (query.length < 3) {
-            setMovies([]);
-            setError("");
-            return;
-        }
-        handleCloseMovie();
-        fetchMovies().then(r => console.log(r));
-
-        return function () {
-            controller.abort();
-        }
-
-    }, [query]);
 
 
     return (
@@ -145,28 +83,13 @@ const ErrorMessage = ({message}) => {
 
 // Stateful Component
 function SearchBar({query, setQuery}) {
-    // useEffect(() => {
-    //     const element = document.querySelector('.search');
-    //     console.log(element);
-    //     element.focus();
-    // }, []);
-
     const inputElement = useRef(null);
 
-    useEffect(function () {
-        function callback(e) {
-
-            if (document.activeElement === inputElement.current) return;
-
-            if (e.code === 'Enter') {
-                setQuery('');
-                inputElement.current.focus();
-            }
-        }
-
-        return () => document.addEventListener('keydown', callback);
-    }, [setQuery]);
-
+    useKey('Enter', function () {
+        if (document.activeElement === inputElement.current) return;
+        inputElement.current.focus();
+        setQuery('');
+    })
 
     return (
         <input
@@ -229,28 +152,6 @@ const Box = ({children}) => {
     )
 }
 
-// const WatchedBox = () => {
-//
-//     const [watched, setWatched] = useState(tempWatchedData);
-//     const [isOpen2, setIsOpen2] = useState(true);
-//
-//     return (
-//         <div className="box">
-//             <button
-//                 className="btn-toggle"
-//                 onClick={() => setIsOpen2((open) => !open)}
-//             >
-//                 {isOpen2 ? "–" : "+"}
-//             </button>
-//             {isOpen2 && (
-//                 <>
-//                     <WatchedSummary watched={watched}/>
-//                     <WatchedMoviesList watched={watched}/>
-//                 </>
-//             )}
-//         </div>
-//     )
-// }
 
 // Presentational Component
 const MovieList = ({movies, onSelectMovie}) => {
@@ -370,21 +271,7 @@ function MovieDetails({selectedId, onCloseMovie, onAddWatched, watched}) {
     }
 
 
-    useEffect(function () {
-        function callback(e) {
-            if (e.code === 'Escape') {
-                onCloseMovie();
-            }
-        }
-
-        document.addEventListener('keydown', callback);
-
-        return function () {
-            document.removeEventListener('keydown', callback);
-        }
-
-
-    }, [onCloseMovie]);
+    useKey('Escape', onCloseMovie)
 
 
     useEffect(function () {
